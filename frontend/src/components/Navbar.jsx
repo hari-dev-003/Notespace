@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PenTool, Sparkles,Search,User,LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import axios from 'axios';
 
 const Navbar = ({ onFavouritesClick }) => {
     const [notesNumber, setNotesNumber] = useState(0);
@@ -21,6 +22,9 @@ const Navbar = ({ onFavouritesClick }) => {
         axios.get('http://localhost:3000/api/details/')
             .then(response => {
                 setNotesNumber(response.data.length);
+                const favoritesCount = response.data.filter(note => note.favourite).length;
+                setFavoritesNumber(favoritesCount);
+
             })
             .catch(error => {
                 console.error("Error fetching notes:", error);
@@ -51,7 +55,7 @@ const Navbar = ({ onFavouritesClick }) => {
                             className='px-3 py-1 rounded-3xl bg-yellow-100 text-center text-yellow-700 font-medium flex items-center hover:bg-yellow-200 transition-colors duration-200'
                             onClick={onFavouritesClick}
                         >
-                            <span className="mr-1">⭐</span>Favourites
+                            <span className="mr-1">⭐</span>{favoritesNumber} Favourites
                         </button>
                         <div className="flex items-center  space-x-2">
                             <Sparkles className="w-5 h-5 text-yellow-500" />
