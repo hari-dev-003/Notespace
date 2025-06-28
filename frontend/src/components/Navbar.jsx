@@ -3,17 +3,34 @@ import { PenTool, Sparkles,Search,User,LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 
-const Navbar = () => {
+const Navbar = ({ onFavouritesClick }) => {
     const [notesNumber, setNotesNumber] = useState(0);
     const [favoritesNumber, setFavoritesNumber] = useState(0);
     const auth = useAuth();
     // Signout function to redirect to Cognito logout
     const signOutRedirect = () => {
-    const clientId = "3uoobjh33ri6tuebivgcccmrfk";
-    const logoutUri = "http://localhost:5173"; // Ensure this matches your redirect URI in Cognito
-    const cognitoDomain = "https://ap-south-1rsw3jvpsk.auth.ap-south-1.amazoncognito.com";
-    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
-  };
+        const clientId = "3uoobjh33ri6tuebivgcccmrfk";
+        const logoutUri = "http://localhost:5173"; // Ensure this matches your redirect URI in Cognito
+        const cognitoDomain = "https://ap-south-1rsw3jvpsk.auth.ap-south-1.amazoncognito.com";
+        window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+    };
+
+    // Fetch notes and favorites count from the backend or state management
+
+    const fetchNotesAndFavoritesCount = async () => {
+        axios.get('http://localhost:3000/api/details/')
+            .then(response => {
+                setNotesNumber(response.data.length);
+            })
+            .catch(error => {
+                console.error("Error fetching notes:", error);
+            });
+    };
+
+    useEffect(() => {
+        fetchNotesAndFavoritesCount();
+    }, []);
+
 
     return (
         <>
@@ -26,13 +43,17 @@ const Navbar = () => {
                             <PenTool className="w-8 h-8 text-purple-500" />
                             <span className="text-3xl font-bold">Skimble</span>
                         </div>
-                        <div className=' px-3 py-1 rounded-3xl bg-purple-100 text-center text-purple-700 font-medium'>
+                        
+                        <div className=' px-3 py-1 rounded-3xl bg-purple-100 text-center text-purple-700 font-medium '>
                             {notesNumber} Notes
                         </div>
-                        <div className='px-3 py-1 rounded-3xl bg-yellow-100 text-center text-yellow-700 font-medium'>
-                            ⭐{favoritesNumber} Favourites
-                        </div>
-                        <div className="flex items-center space-x-2">
+                        <button
+                            className='px-3 py-1 rounded-3xl bg-yellow-100 text-center text-yellow-700 font-medium flex items-center hover:bg-yellow-200 transition-colors duration-200'
+                            onClick={onFavouritesClick}
+                        >
+                            <span className="mr-1">⭐</span>Favourites
+                        </button>
+                        <div className="flex items-center  space-x-2">
                             <Sparkles className="w-5 h-5 text-yellow-500" />
                             <span className="text-lg">Premium</span>
                         </div>

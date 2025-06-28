@@ -28,7 +28,7 @@ exports.getContent = async (req, res) => {
 
 
 exports.addContent = async (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, favourite } = req.body;
   const ownerId = req.user?.sub; // Use optional chaining for safety
 
   // Validate input
@@ -46,6 +46,7 @@ exports.addContent = async (req, res) => {
       title: { S: title },
       content: { S: content },
       updatedAt: { N: timestamp.toString() },
+      favourite: { BOOL: !!favourite },
     },
   };
 
@@ -61,24 +62,22 @@ exports.addContent = async (req, res) => {
 
 exports.deleteContent = async (req, res) => {
   const { boardId } = req.params;
-  const ownerId = req.user?.sub; // Use optional chaining for safety
-
-  // Validate input
-  if (!boardId || !ownerId) {
-    return res.status(400).json({ error: "Missing required fields: boardId or user authentication information." });
+  if (!boardId) {
+    return res.status(400).json({ error: "Missing required field: boardId." });
   }
-
   const params = {
     TableName: TABLE_NAME,
     Key: {
       boardId: { S: boardId },
-      userId: { S: ownerId },
     },
+    ReturnValues: 'ALL_OLD'
   };
-
   try {
     const command = new DeleteItemCommand(params);
-    await dynamoDB.send(command);
+    const result = await dynamoDB.send(command);
+    if (!result.Attributes) {
+      return res.status(404).json({ error: 'Item not found or already deleted' });
+    }
     res.status(200).json({ message: 'Content deleted successfully' });
   } catch (error) {
     console.error("Error deleting content:", error);
@@ -88,44 +87,47 @@ exports.deleteContent = async (req, res) => {
 
 exports.updateContent = async (req, res) => {
   const { boardId } = req.params;
-  const { title, content } = req.body;
-  const ownerId = req.user.sub;
+  const { title, content, favourite } = req.body;
   const timestamp = Math.floor(Date.now() / 1000);
-
   // Build dynamic UpdateExpression and ExpressionAttributeValues
   let updateExp = [];
   const expAttrValues = {
     ':updatedAt': { N: timestamp.toString() },
   };
-
   if (title !== undefined) {
     updateExp.push('title = :title');
     expAttrValues[':title'] = { S: title };
   }
-
   if (content !== undefined) {
     updateExp.push('content = :content');
     expAttrValues[':content'] = { S: content };
   }
-
+  if (favourite !== undefined) {
+    updateExp.push('favourite = :favourite');
+    expAttrValues[':favourite'] = { BOOL: !!favourite };
+  }
   updateExp.push('updatedAt = :updatedAt');
-
+  if (updateExp.length === 1) {
+    return res.status(400).json({ error: 'No fields to update.' });
+  }
   const params = {
     TableName: TABLE_NAME,
     Key: {
       boardId: { S: boardId },
-      userId: { S: ownerId },
     },
     UpdateExpression: 'set ' + updateExp.join(', '),
     ExpressionAttributeValues: expAttrValues,
-    ReturnValues: 'UPDATED_NEW',
+    ReturnValues: 'ALL_NEW',
+    ConditionExpression: 'attribute_exists(boardId)'
   };
-
   try {
     const command = new UpdateItemCommand(params);
-    await dynamoDB.send(command);
-    res.status(200).json({ message: 'Content updated successfully' });
+    const result = await dynamoDB.send(command);
+    res.status(200).json({ message: 'Content updated successfully', updated: result.Attributes });
   } catch (error) {
+    if (error.name === 'ConditionalCheckFailedException') {
+      return res.status(404).json({ error: 'Item not found for update' });
+    }
     console.error('Error updating content:', error);
     res.status(500).json({ error: 'An error occurred while updating content' });
   }
