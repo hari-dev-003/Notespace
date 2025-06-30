@@ -11,7 +11,7 @@ const Navbar = ({ onFavouritesClick }) => {
     // Signout function to redirect to Cognito logout
     const signOutRedirect = () => {
         const clientId = "3uoobjh33ri6tuebivgcccmrfk";
-        const logoutUri = "https://main.d2w1op1cgi6ykw.amplifyapp.com/"; // Ensure this matches your redirect URI in Cognito
+        const logoutUri = "http://localhost:5173/"; // Ensure this matches your redirect URI in Cognito
         const cognitoDomain = "https://ap-south-1rsw3jvpsk.auth.ap-south-1.amazoncognito.com";
         window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
     };
