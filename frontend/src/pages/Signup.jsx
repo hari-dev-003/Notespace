@@ -5,13 +5,12 @@ const Signup = () => {
   const auth = useAuth();
     const navigate = useNavigate();
 
-  const signOutRedirect = () => {
-    const clientId = "3uoobjh33ri6tuebivgcccmrfk";
-    const logoutUri = "http://localhost:5173"; // Ensure this matches your redirect URI in Cognito
-    const cognitoDomain = "https://ap-south-1rsw3jvpsk.auth.ap-south-1.amazoncognito.com";
+ const signOutRedirect = () => {
+    const clientId = "43eurrtnocbfacncase6lkevk5";
+    const logoutUri = "http://localhost:5173/"; // Ensure this matches your redirect URI in Cognito
+    const cognitoDomain = "https://ap-south-1gtsmszjqq.auth.ap-south-1.amazoncognito.com";
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
   };
-
   if (auth.isLoading) {
     return <div>Loading...</div>;
   }
